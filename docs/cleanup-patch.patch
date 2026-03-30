@@ -1,0 +1,58 @@
+--- a/tests/main.navigation.spec.ts
++++ b/tests/main.navigation.spec.ts
+@@ -1,5 +1,6 @@
+ import { test, expect } from '@playwright/test';
+ import { PlaywrightHomePage } from '../pages/PlaywrightHomePage';
++// TC-NAV-001: Main Navigation Links
+ 
+ test.describe('Main Navigation', () => {
+   test('Navigation buttons are visible on main page (TC-NAV-001)', async ({ page }) => {
+@@ -7,6 +8,7 @@
+ 
+     // User actions
+     await homePage.goto();
++    // Ensure page loads completely
+ 
+     // Verification
+     await expect(homePage.docsLink()).toBeVisible();
+@@ -14,18 +16,25 @@
+     await expect(homePage.communityLink()).toBeVisible();
+   });
+ 
+-  test('Navigation links work correctly', async ({ page }) => {
++  test('Navigation links work correctly (TC-NAV-001)', async ({ page }) => {
+     // Initialization
+     const homePage = new PlaywrightHomePage(page);
+ 
+     // User actions
+     await homePage.goto();
+     await homePage.clickDocs();
+-    await page.waitForTimeout(2000);
+ 
+     // Verification
+-    await expect(page).toHaveURL(/.*docs/);
++    await expect(page).toHaveURL('https://playwright.dev/docs/intro');
++    await expect(page.locator('h1')).toContainText('Installation');
+ 
+-    // User actions
+-    await page.goto('/'); await homePage.clickApi();
++    // User actions
++    await page.goto('/');
++    await homePage.clickApi();
+ 
+     // Verification
+-    await expect(page).toHaveURL(/.*api/);
++    await expect(page).toHaveURL('https://playwright.dev/docs/api/class-playwright');
++    await expect(page.locator('h1')).toContainText('Playwright');
++
++    // User actions
++    await page.goto('/');
++    await homePage.clickCommunity();
++
++    // Verification
++    await expect(page).toHaveURL('https://playwright.dev/community/welcome');
++    await expect(page.locator('h1')).toContainText('Welcome');
+   });
+-});
+\ No newline at end of file
++});
