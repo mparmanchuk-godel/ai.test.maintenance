@@ -15,6 +15,11 @@ jobs:
   playwright-tests:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    environment: github-pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     env:
       CI: true
     steps:
@@ -62,3 +67,67 @@ jobs:
           "title": "Playwright Tests Failed",
           "text": "Pull Request: ${{ github.event.pull_request.title }}\nAuthor: ${{ github.event.pull_request.user.login }}\nBranch: ${{ github.head_ref }}\nWorkflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         }' ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+    - name: Prepare history.json
+      if: always() && github.ref == 'refs/heads/main'
+      run: |
+        mkdir -p playwright-report
+        if [ ! -f playwright-report/history.json ]; then
+          echo '[]' > playwright-report/history.json
+        fi
+
+    - name: Load previous history
+      if: always() && github.ref == 'refs/heads/main'
+      run: |
+        git clone --branch gh-pages --depth 1 https://github.com/${{ github.repository }}.git gh-pages-temp || true
+        if [ -f gh-pages-temp/history.json ]; then
+          jq -s 'add' gh-pages-temp/history.json playwright-report/history.json > playwright-report/history.json.tmp && mv playwright-report/history.json.tmp playwright-report/history.json
+        fi
+
+    - name: Append new entry
+      if: always() && github.ref == 'refs/heads/main'
+      run: |
+        TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        jq --arg timestamp "$TIMESTAMP" --arg run_url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" --arg sha "${{ github.sha }}" --arg ref "${{ github.ref }}" --arg conclusion "${{ job.status }}" '. += [{"timestamp": $timestamp, "run_url": $run_url, "sha": $sha, "ref": $ref, "conclusion": $conclusion}]' playwright-report/history.json > playwright-report/history.json.tmp && mv playwright-report/history.json.tmp playwright-report/history.json
+
+    - name: Setup Pages
+      if: always() && github.ref == 'refs/heads/main'
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      if: always() && github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./playwright-report
+
+    - name: Deploy to GitHub Pages
+      if: always() && github.ref == 'refs/heads/main'
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+        cache: yarn
+
+    - name: Install dependencies
+      run: yarn install --immutable --immutable-cache --check-cache
+
+    - name: Run security audit
+      run: |
+        echo "## Security Audit Results" >> $GITHUB_STEP_SUMMARY
+        AUDIT_OUTPUT=$(yarn audit --audit-level high --audit-level critical --json 2>/dev/null || true)
+        if echo "$AUDIT_OUTPUT" | jq -e '.data.vulnerabilities' > /dev/null 2>&1; then
+          echo "$AUDIT_OUTPUT" | jq -r '.data.vulnerabilities | to_entries[] | "- \(.key): \(.value.severity) - \(.value.title)"' >> $GITHUB_STEP_SUMMARY
+          echo "High or critical vulnerabilities found. Failing the job." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        else
+          echo "No high or critical vulnerabilities found." >> $GITHUB_STEP_SUMMARY
+        fi
