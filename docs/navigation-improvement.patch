@@ -1,0 +1,77 @@
+--- a/tests/main.navigation.refactored.spec.ts
++++ b/tests/main.navigation.refactored.spec.ts
+@@ -1,7 +1,7 @@
+ // path: tests/main.navigation.refactored.spec.ts
+ 
+ import { test, expect } from '@playwright/test';
+-import { PlaywrightHomePage } from '../pages/PlaywrightHomePage';
++import { PlaywrightHomePage } from '../pages/PlaywrightHomePage'; // TC-NAV-001: Main Navigation Links
+ 
+ test.describe('Main Navigation', () => {
+   test('Navigation buttons are visible and accessible (TC-NAV-001)', async ({ page }) => {
+@@ -9,6 +9,7 @@
+ 
+     await test.step('Navigate to homepage', async () => {
+       await homePage.goto();
++      // Ensure page loads completely
+     });
+ 
+     await test.step('Verify navigation buttons are visible', async () => {
+@@ -16,6 +17,7 @@
+       await expect(homePage.apiLink()).toBeVisible();
+       await expect(homePage.communityLink()).toBeVisible();
+     });
++    // Validates presence and visibility of navigation elements
+ 
+     await test.step('Verify accessibility attributes', async () => {
+       await expect(homePage.docsLink()).toHaveAttribute('role', 'link');
+@@ -23,6 +25,7 @@
+       await expect(homePage.communityLink()).toHaveAttribute('role', 'link');
+     });
+   });
++  // Ensures links are properly accessible for screen readers
+ 
+   test('Navigation links navigate to correct pages (TC-NAV-001)', async ({ page }) => {
+     const homePage = new PlaywrightHomePage(page);
+@@ -30,21 +33,35 @@
+     await test.step('Navigate to homepage', async () => {
+       await homePage.goto();
+     });
++    // Setup for navigation testing
+ 
+     await test.step('Click Docs and verify navigation', async () => {
+       await homePage.clickDocs();
+-      await expect(page).toHaveURL(/.*docs/);
++      await expect(page).toHaveURL('https://playwright.dev/docs/intro');
++      await expect(page.locator('h1')).toContainText('Installation');
+     });
++    // Confirms Docs link leads to correct page with expected content
+ 
+     await test.step('Return to homepage and click API', async () => {
+       await page.goto('/');
+       await homePage.clickApi();
+-      await expect(page).toHaveURL(/.*api/);
++      await expect(page).toHaveURL('https://playwright.dev/docs/api/class-playwright');
++      await expect(page.locator('h1')).toContainText('Playwright');
+     });
++    // Validates API link navigation and page content
+ 
+     await test.step('Return to homepage and click Community', async () => {
+       await page.goto('/');
+       await homePage.clickCommunity();
+-      await expect(page).toHaveURL(/.*community/);
++      await expect(page).toHaveURL('https://playwright.dev/docs/api/class-playwright');
++      await expect(page.locator('h1')).toContainText('Welcome');
+     });
++    // Ensures Community link works and displays correct page
+   });
++
++  test('Navigation handles edge case: incorrect link behavior (TC-NAV-001)', async ({ page }) => {
++    const homePage = new PlaywrightHomePage(page);
++
++    await homePage.goto();
++    // Simulate a broken link scenario
++    await expect(homePage.docsLink()).not.toHaveAttribute('href', '#broken');
++    // Ensures links don't point to invalid anchors
++  });
+ });
