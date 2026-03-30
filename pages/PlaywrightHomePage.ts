@@ -38,4 +38,16 @@ export class PlaywrightHomePage {
   communityLink() {
     return this.communityLink;
   }
+
+  async clickDocs() {
+    await this.docsLink.click();
+  }
+
+  async clickApi() {
+    await this.apiLink.click();
+  }
+
+  async clickCommunity() {
+    await this.communityLink.click();
+  }
 }
