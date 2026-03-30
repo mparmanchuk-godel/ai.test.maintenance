@@ -51,3 +51,14 @@ jobs:
         name: playwright-traces
         path: test-results/**/trace*.zip
         retention-days: 30
+
+    - name: Notify Teams on failure
+      if: failure()
+      run: |
+        curl -H 'Content-Type: application/json' -d '{
+          "@type": "MessageCard",
+          "@context": "http://schema.org/extensions",
+          "summary": "Playwright Tests Failed",
+          "title": "Playwright Tests Failed",
+          "text": "Pull Request: ${{ github.event.pull_request.title }}\nAuthor: ${{ github.event.pull_request.user.login }}\nBranch: ${{ github.head_ref }}\nWorkflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        }' ${{ secrets.TEAMS_WEBHOOK_URL }}
