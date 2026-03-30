@@ -22,20 +22,19 @@ test.describe('Main Navigation', () => {
     // User actions
     await homePage.goto();
     await homePage.clickDocs();
+    await page.waitForTimeout(2000);
 
     // Verification
     await expect(page).toHaveURL(/.*docs/);
 
     // User actions
-    await page.goto('/');
-    await homePage.clickApi();
+    await page.goto('/'); await homePage.clickApi();
 
     // Verification
     await expect(page).toHaveURL(/.*api/);
 
     // User actions
-    await page.goto('/');
-    await homePage.clickCommunity();
+    await page.goto('/'); await homePage.clickCommunity();
 
     // Verification
     await expect(page).toHaveURL(/.*community/);

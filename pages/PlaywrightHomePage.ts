@@ -14,7 +14,7 @@ export class PlaywrightHomePage {
     this.getStartedLink = page.getByRole('link', { name: 'Get started' });
     this.installHeading = page.getByRole('heading', { name: 'Installation' });
     this.pageTitle = page.getByRole('heading', { name: 'Playwright enables reliable end-to-end testing' });
-    this.docsLink = page.getByRole('link', { name: 'Docs' });
+    this.docsLink = page.locator('#docs');
     this.apiLink = page.getByRole('link', { name: 'API' });
     this.communityLink = page.getByRole('link', { name: 'Community' });
   }
